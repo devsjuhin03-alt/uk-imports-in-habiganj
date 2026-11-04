@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UK Imports in Habiganj</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#071b15;--card:#10291f;--gold:#d6b66b;--white:#f5f3e9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,sans-serif;padding:18px}
+header{text-align:center;padding:22px 5px}
+header h1{color:var(--gold);font-size:25px;margin:0}
+header p{color:#b7c4bc}
+.container{max-width:850px;margin:auto}
+.card{background:var(--card);border:1px solid #927b49;border-radius:14px;padding:18px;margin-bottom:18px}
+h2{color:var(--gold);font-size:19px}
+input,button,textarea{font:inherit}
+input,textarea{width:100%;padding:12px;margin:7px 0 14px;background:#071b15;color:white;border:1px solid #65776c;border-radius:7px}
+button{background:var(--gold);color:#102017;border:0;border-radius:7px;padding:12px 17px;font-weight:bold;cursor:pointer;margin:5px 3px}
+.secondary{background:#294538;color:white}
+.danger{background:#8c3838;color:white}
+.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:7px;align-items:center}
+.row input{min-width:0}
+.total{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #43584b}
+.total strong{color:var(--gold)}
+#app{display:none}
+.small{color:#b7c4bc;font-size:13px}
+#status{padding:10px;color:var(--gold)}
+.memo{background:#fff;color:#222;padding:20px;border-radius:8px}
+.memo h2,.memo strong{color:#173b2b}
+@media(max-width:550px){.row{grid-template-columns:1fr 1fr}.row .product{grid-column:span 2}}
+@media print{
+ body{background:white;padding:0}
+ header,#login,#orderForm,#overview,#history,#logout{display:none!important}
+ #app{display:block!important}
+ #memoCard{display:block!important;border:0;background:white;padding:0}
+ .memo{border:0}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>UK IMPORTS IN HABIGANJ</h1>
+<p>Order Management System</p>
+</header>
+
+<section class="card" id="login">
+<h2>Admin Login</h2>
+<label>Email</label>
+<input id="email" type="email" placeholder="Admin email">
+<label>Password</label>
+<input id="password" type="password" placeholder="Admin password">
+<button onclick="login()">Login</button>
+<p class="small">Only authorized admin can access orders.</p>
+<div id="loginStatus"></div>
+</section>
+
+<div id="app">
+<button class="secondary" id="logout" onclick="logout()">Logout</button>
+
+<section class="card" id="orderForm">
+<h2>Create New Order</h2>
+<label>Customer Name</label>
+<input id="customerName" placeholder="Customer name">
+<label>Phone Number</label>
+<input id="phone" placeholder="01XXXXXXXXX">
+<label>Address</label>
+<textarea id="address" placeholder="Customer address"></textarea>
+
+<h2>Products</h2>
+<div id="products"></div>
+<button class="secondary" onclick="addProduct()">+ Add Another Product</button>
+
+<h2>Order Charges</h2>
+<label>Delivery Charge (৳)</label>
+<input id="delivery" type="number" value="0" min="0" oninput="calculate()">
+<label>Advance Payment (৳)</label>
+<input id="advance" type="number" value="0" min="0" oninput="calculate()">
+
+<div id="overview" class="card">
+<h2>Order Overview</h2>
+<div class="total">Product Subtotal <strong id="subtotal">৳0</strong></div>
+<div class="total">Delivery Charge <strong id="deliveryView">৳0</strong></div>
+<div class="total">Grand Total <strong id="grand">৳0</strong></div>
+<div class="total">Advance Payment <strong id="advanceView">৳0</strong></div>
+<div class="total">Remaining Due <strong id="due">৳0</strong></div>
+</div>
+<button onclick="saveOrder()">Save Order</button>
+<button class="secondary" onclick="previewMemo()">Preview Memo</button>
+<div id="status"></div>
+</section>
+
+<section class="card" id="memoCard" style="display:none">
+<div class="memo" id="memo">
+<h2>UK IMPORTS IN HABIGANJ</h2>
+<p>Order Memo</p>
+<div id="memoDetails"></div>
+</div>
+<button onclick="window.print()">Print / Save PDF</button>
+</section>
+
+<section class="card" id="history">
+<h2>Order History</h2>
+<button class="secondary" onclick="loadOrders()">Refresh Orders</button>
+<div id="ordersList"></div>
+</section>
+</div>
+</div>
+
+<script>
+// Add your Supabase project details here
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+
+const db = supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let currentOrder = null;
+
+function money(n){
+ return "৳"+Number(n||0).toLocaleString("en-BD");
+}
+
+async function login(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ const msg=document.getElementById("loginStatus");
+ if(!email||!password){msg.textContent="Enter email and password";return;}
+ const {error}=await db.auth.signInWithPassword({email,password});
+ if(error){msg.textContent=error.message;return;}
+ showApp();
+}
+
+async function logout(){
+ await db.auth.signOut();
+ document.getElementById("app").style.display="none";
+ document.getElementById("login").style.display="block";
+}
+
+function showApp(){
+ document.getElementById("login").style.display="none";
+ document.getElementById("app").style.display="block";
+ if(!document.querySelector(".product-row"))addProduct();
+ loadOrders();
+}
+
+db.auth.getSession().then(({data})=>{
+ if(data.session)showApp();
+});
+
+function addProduct(){
+ const div=document.createElement("div");
+ div.className="row product-row";
+ div.innerHTML=`
+ <input class="product" placeholder="Product name">
+ <input class="qty" type="number" min="1" value="1" oninput="calculate()">
+ <input class="price" type="number" min="0" value="0" oninput="calculate()">
+ <button class="danger" onclick="this.parentElement.remove();calculate()">Remove</button>`;
+ document.getElementById("products").appendChild(div);
+ calculate();
+}
+
+function getItems(){
+ return [...document.querySelectorAll(".product-row")].map(row=>({
+ name:row.querySelector(".product").value.trim(),
+ quantity:Number(row.querySelector(".qty").value),
+ price:Number(row.querySelector(".price").value)
+ })).filter(x=>x.name&&x.quantity>0&&x.price>=0);
+}
+
+function calculate(){
+ const items=getItems();
+ const sub=items.reduce((s,x)=>s+x.quantity*x.price,0);
+ const delivery=Number(document.getElementById("delivery").value)||0;
+ const advance=Number(document.getElementById("advance").value)||0;
+ const grand=sub+delivery;
+ document.getElementById("subtotal").textContent=money(sub);
+ document.getElementById("deliveryView").textContent=money(delivery);
+ document.getElementById("grand").textContent=money(grand);
+ document.getElementById("advanceView").textContent=money(advance);
+ document.getElementById("due").textContent=money(grand-advance);
+ return {items,sub,delivery,advance,grand};
+}
+
+async function saveOrder(){
+ const status=document.getElementById("status");
+ const name=document.getElementById("customerName").value.trim();
+ const phone=document.getElementById("phone").value.trim();
+ const address=document.getElementById("address").value.trim();
+ const totals=calculate();
+
+ if(!name||!phone||!totals.items.length){
+  status.textContent="Please enter customer details and at least one product.";
+  return;
+ }
+ if(totals.advance>totals.grand){
+  status.textContent="Advance cannot be greater than grand total.";
+  return;
+ }
+
+ status.textContent="Saving order...";
+ const customerResult=await db.from("customers").insert({
+  name,phone,address
+ }).select().single();
+
+ if(customerResult.error){status.textContent=customerResult.error.message;return;}
+
+ const memoNumber="UKI-"+Date.now();
+ const orderResult=await db.from("orders").insert({
+  memo_number:memoNumber,
+  customer_id:customerResult.data.id,
+  customer_name:name,
+  customer_phone:phone,
+  customer_address:address,
+  subtotal:totals.sub,
+  delivery_charge:totals.delivery,
+  grand_total:totals.grand,
+  advance_payment:totals.advance,
+  due_amount:totals.grand-totals.advance
+ }).select().single();
+
+ if(orderResult.error){status.textContent=orderResult.error.message;return;}
+
+ const itemRows=totals.items.map(x=>({
+  order_id:orderResult.data.id,
+  product_name:x.name,
+  quantity:x.quantity,
+  unit_price:x.price,
+  total_price:x.quantity*x.price
+ }));
+
+ const itemResult=await db.from("order_items").insert(itemRows);
+ if(itemResult.error){status.textContent="Order created, but product saving failed: "+itemResult.error.message;return;}
+
+ currentOrder={memoNumber,name,phone,address,items:totals.items,...totals};
+ status.textContent="Order saved successfully!";
+ previewMemo();
+ loadOrders();
+}
+
+function previewMemo(){
+ const name=document.getElementById("customerName").value;
+ const phone=document.getElementById("phone").value;
+ const address=document.getElementById("address").value;
+ const t=calculate();
+ const memoNumber=currentOrder?.memoNumber||"Preview";
+ let rows=t.items.map(x=>`<tr><td>${escapeHTML(x.name)}</td><td>${x.quantity}</td><td>${money(x.price)}</td><td>${money(x.quantity*x.price)}</td></tr>`).join("");
+ document.getElementById("memoDetails").innerHTML=`
+ <p><b>Memo:</b> ${memoNumber}<br><b>Date:</b> ${new Date().toLocaleDateString()}</p>
+ <p><b>Customer:</b> ${escapeHTML(name)}<br><b>Phone:</b> ${escapeHTML(phone)}<br><b>Address:</b> ${escapeHTML(address)}</p>
+ <table width="100%" border="1" cellspacing="0" cellpadding="7">
+ <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>${rows}</table>
+ <p>Subtotal: ${money(t.sub)}<br>Delivery: ${money(t.delivery)}<br>
+ <b>Grand Total: ${money(t.grand)}</b><br>
+ Advance: ${money(t.advance)}<br><b>Due: ${money(t.grand-t.advance)}</b></p>
+ <p>Thank you for shopping with us!</p>`;
+ document.getElementById("memoCard").style.display="block";
+}
+
+function escapeHTML(s){
+ return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function loadOrders(){
+ const list=document.getElementById("ordersList");
+ const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(30);
+ if(error){list.textContent=error.message;return;}
+ list.innerHTML=data.length?data.map(o=>`
+ <div class="total">
+ <span>${escapeHTML(o.memo_number)}<br><small>${escapeHTML(o.customer_name)}</small></span>
+ <strong>${money(o.grand_total)}</strong>
+ </div>`).join(""):"No orders yet.";
+}
+</script>
+</body>
+</html>
