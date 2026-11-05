@@ -1,277 +1,423 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UK Imports in Habiganj</title>
+<title>UK Imports in Habiganj | Order Management</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-:root{--bg:#071b15;--card:#10291f;--gold:#d6b66b;--white:#f5f3e9}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,sans-serif;padding:18px}
-header{text-align:center;padding:22px 5px}
-header h1{color:var(--gold);font-size:25px;margin:0}
-header p{color:#b7c4bc}
-.container{max-width:850px;margin:auto}
-.card{background:var(--card);border:1px solid #927b49;border-radius:14px;padding:18px;margin-bottom:18px}
-h2{color:var(--gold);font-size:19px}
-input,button,textarea{font:inherit}
-input,textarea{width:100%;padding:12px;margin:7px 0 14px;background:#071b15;color:white;border:1px solid #65776c;border-radius:7px}
-button{background:var(--gold);color:#102017;border:0;border-radius:7px;padding:12px 17px;font-weight:bold;cursor:pointer;margin:5px 3px}
-.secondary{background:#294538;color:white}
-.danger{background:#8c3838;color:white}
-.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:7px;align-items:center}
-.row input{min-width:0}
-.total{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #43584b}
-.total strong{color:var(--gold)}
-#app{display:none}
-.small{color:#b7c4bc;font-size:13px}
-#status{padding:10px;color:var(--gold)}
-.memo{background:#fff;color:#222;padding:20px;border-radius:8px}
-.memo h2,.memo strong{color:#173b2b}
-@media(max-width:550px){.row{grid-template-columns:1fr 1fr}.row .product{grid-column:span 2}}
-@media print{
- body{background:white;padding:0}
- header,#login,#orderForm,#overview,#history,#logout{display:none!important}
- #app{display:block!important}
- #memoCard{display:block!important;border:0;background:white;padding:0}
- .memo{border:0}
-}
+:root{--navy:#071a36;--navy2:#102b50;--pink:#d4145a;--pink2:#f7dce7;--gold:#c9a44c;--ink:#172033;--muted:#687386;--line:#dce2eb;--paper:#fff;--bg:#f4f6fa;--green:#16834a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+button,input,textarea,select{font:inherit}button{border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--navy);color:#fff}
+button:hover{filter:brightness(1.08)}button:disabled{opacity:.55;cursor:not-allowed}
+.btn-pink{background:var(--pink)}.btn-light{background:#e9edf4;color:var(--navy)}.btn-green{background:var(--green)}.btn-red{background:#a92b3b}
+.wrap{max-width:1120px;margin:auto;padding:18px}.brand{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;text-align:center;margin-bottom:16px;box-shadow:0 5px 20px #14213a0b}
+.brand img{width:min(100%,560px);max-height:230px;object-fit:contain;display:block;margin:0 auto 8px}.brand p{margin:0;color:var(--muted);letter-spacing:2px;font-size:12px;font-weight:700}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tabs button{flex:1;min-width:170px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 4px 18px #14213a08}
+h1,h2,h3{color:var(--navy);margin-top:0}h2{font-size:20px}h3{font-size:16px}
+label{display:block;font-size:13px;font-weight:700;color:#344158;margin:8px 0 5px}
+input,textarea,select{width:100%;padding:11px 12px;border:1px solid #cbd3df;border-radius:8px;background:#fff;color:var(--ink);outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--pink);box-shadow:0 0 0 3px #d4145a18}
+textarea{min-height:76px;resize:vertical}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.product-row{display:grid;grid-template-columns:2fr .8fr .9fr .9fr .8fr auto;gap:8px;align-items:end;padding:12px 0;border-bottom:1px solid var(--line)}
+.product-row label{font-size:11px}.product-row .remove{padding:10px 12px;background:#a92b3b}
+.muted{color:var(--muted);font-size:13px}.notice{padding:11px 13px;border-radius:9px;background:#fff6e3;color:#77540c;font-size:13px;line-height:1.5;margin:10px 0}
+.status-msg{font-size:13px;margin-top:10px;white-space:pre-wrap}.success{color:var(--green)}.error{color:#b42336}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{padding:15px;border-radius:11px;background:#f3f5f9;border:1px solid var(--line)}.metric small{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;font-size:22px;color:var(--navy);margin-top:7px}
+.total-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}.total-line strong{color:var(--navy)}
+.hidden{display:none!important}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar>*{flex:1}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}th{background:var(--navy);color:#fff;text-align:left}th,td{padding:10px;border:1px solid var(--line);white-space:nowrap}
+.order-row{display:grid;grid-template-columns:1.3fr 1.2fr .8fr 1fr 1.3fr;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}
+.pill{display:inline-block;padding:5px 9px;border-radius:20px;background:#eaf0f8;color:var(--navy);font-size:11px;font-weight:700}
+.memo{background:#fff;color:#182238;border:1px solid #d5dbe5;border-radius:10px;overflow:hidden}
+.memo-head{padding:18px;text-align:center;background:linear-gradient(180deg,#fff 0%,#fff7fa 100%);border-bottom:5px solid var(--pink)}
+.memo-head img{width:min(100%,470px);max-height:190px;object-fit:contain}
+.memo-head h2{margin:5px 0;color:var(--navy);font-size:24px}
+.memo-body{padding:18px}.memo-info{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;padding:12px;border:1px solid #cbd3df;border-radius:9px;margin-bottom:15px;font-size:13px}
+.memo table{font-size:12px}.memo th{background:var(--navy)}.memo-totals{max-width:390px;margin:15px 0 15px auto}.memo-thanks{text-align:center;color:var(--pink);font-weight:700;font-size:17px;padding:16px;border-top:1px solid var(--line)}
+.memo-foot{text-align:center;background:var(--navy);color:#fff;padding:13px;font-size:12px;letter-spacing:1px}
+@media(max-width:760px){.product-row{grid-template-columns:1fr 1fr}.product-row .pname{grid-column:span 2}.product-row .remove{grid-column:span 2}.summary-grid{grid-template-columns:1fr 1fr}.order-row{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.wrap{padding:10px}.grid2,.grid3,.memo-info{grid-template-columns:1fr}.brand{padding:10px}.summary-grid{grid-template-columns:1fr 1fr}.card{padding:13px}}
+@media print{body{background:#fff}.wrap{max-width:none;padding:0}.brand,.tabs,#staffPanel,#adminPanel>h2,#adminPanel>.toolbar,#adminPanel>.card:not(#memoCard),#memoActions{display:none!important}#memoCard{display:block!important;border:0;box-shadow:none;margin:0;padding:0}.memo{border:0}.memo-head,.memo-foot{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>
 </head>
 <body>
-<div class="container">
-<header>
-<h1>UK IMPORTS IN HABIGANJ</h1>
-<p>Order Management System</p>
-</header>
+<div class="wrap">
+  <header class="brand">
+    <img src="logo.jpg" alt="UK Imports in Habiganj logo">
+    <p>ORDER MANAGEMENT SYSTEM</p>
+  </header>
 
-<section class="card" id="login">
-<h2>Admin Login</h2>
-<label>Email</label>
-<input id="email" type="email" placeholder="Admin email">
-<label>Password</label>
-<input id="password" type="password" placeholder="Admin password">
-<button onclick="login()">Login</button>
-<p class="small">Only authorized admin can access orders.</p>
-<div id="loginStatus"></div>
-</section>
+  <nav class="tabs">
+    <button id="staffTab" class="btn-pink" onclick="showPanel('staffAccess')">Staff Order Form</button>
+    <button id="adminTab" onclick="showPanel('login')">Admin Login</button>
+  </nav>
 
-<div id="app">
-<button class="secondary" id="logout" onclick="logout()">Logout</button>
+  <section id="staffAccessPanel" class="card">
+    <h2>Staff Access</h2>
+    <p class="muted">Enter your team's shared access code to open the order form.</p>
+    <label>Team Access Code</label>
+    <input id="staffAccessCode" type="password" autocomplete="off" placeholder="Enter team access code" onkeydown="if(event.key==='Enter') unlockStaff()">
+    <button class="btn-pink" onclick="unlockStaff()">Open Staff Order Form</button>
+    <div id="staffAccessStatus" class="status-msg"></div>
+  </section>
 
-<section class="card" id="orderForm">
-<h2>Create New Order</h2>
-<label>Customer Name</label>
-<input id="customerName" placeholder="Customer name">
-<label>Phone Number</label>
-<input id="phone" placeholder="01XXXXXXXXX">
-<label>Address</label>
-<textarea id="address" placeholder="Customer address"></textarea>
+  <section id="staffPanel" class="card hidden">
+    <div class="toolbar" style="justify-content:space-between">
+      <h2 style="margin:0">Create New Order</h2>
+      <button class="btn-light" onclick="lockStaff()">Lock Form</button>
+    </div>
+    <div class="notice">Staff order entry. Orders submitted here are saved for the admin to review. This form does not provide access to customer records or the admin dashboard.</div>
+    <div class="grid2">
+      <div><label>Customer Name</label><input id="customerName" placeholder="Customer name"></div>
+      <div><label>Phone Number</label><input id="phone" placeholder="01XXXXXXXXX"></div>
+    </div>
+    <label>Delivery Address</label><textarea id="address" placeholder="Customer address"></textarea>
+    <h3>Products</h3>
+    <div id="products"></div>
+    <button type="button" class="btn-light" onclick="addProduct()">+ Add Another Product</button>
+    <div class="grid2" style="margin-top:12px">
+      <div><label>Delivery Charge (BDT)</label><input id="delivery" type="number" min="0" value="0" oninput="calculate()"></div>
+      <div><label>Advance Payment (BDT)</label><input id="advance" type="number" min="0" value="0" oninput="calculate()"></div>
+    </div>
+    <div class="card" style="background:#f8f9fc;margin-top:14px">
+      <h3>Order Overview</h3>
+      <div class="total-line">Product Subtotal <strong id="subtotal">৳0</strong></div>
+      <div class="total-line">Total Product Weight <strong id="totalWeight">0 g</strong></div>
+      <div class="total-line">Delivery Charge <strong id="deliveryView">৳0</strong></div>
+      <div class="total-line">Grand Total <strong id="grand">৳0</strong></div>
+      <div class="total-line">Advance Payment <strong id="advanceView">৳0</strong></div>
+      <div class="total-line">Remaining Due <strong id="due">৳0</strong></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn-pink" id="saveBtn" onclick="saveOrder()">Save Order</button>
+      <button class="btn-light" onclick="previewMemo()">Preview Memo</button>
+    </div>
+    <div id="staffStatus" class="status-msg"></div>
+  </section>
 
-<h2>Products</h2>
-<div id="products"></div>
-<button class="secondary" onclick="addProduct()">+ Add Another Product</button>
+  <section id="loginPanel" class="card hidden">
+    <h2>Admin Login</h2>
+    <div class="grid2">
+      <div><label>Admin Email</label><input id="email" type="email" autocomplete="username" placeholder="Admin email"></div>
+      <div><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Admin password"></div>
+    </div>
+    <button onclick="login()">Login to Dashboard</button>
+    <div id="loginStatus" class="status-msg"></div>
+  </section>
 
-<h2>Order Charges</h2>
-<label>Delivery Charge (৳)</label>
-<input id="delivery" type="number" value="0" min="0" oninput="calculate()">
-<label>Advance Payment (৳)</label>
-<input id="advance" type="number" value="0" min="0" oninput="calculate()">
+  <section id="adminPanel" class="hidden">
+    <div class="toolbar" style="margin-bottom:12px">
+      <h2 style="margin:0;flex:2">Admin Dashboard</h2>
+      <button class="btn-light" onclick="loadDashboard()">Refresh</button>
+      <button class="btn-red" onclick="logout()">Logout</button>
+    </div>
 
-<div id="overview" class="card">
-<h2>Order Overview</h2>
-<div class="total">Product Subtotal <strong id="subtotal">৳0</strong></div>
-<div class="total">Delivery Charge <strong id="deliveryView">৳0</strong></div>
-<div class="total">Grand Total <strong id="grand">৳0</strong></div>
-<div class="total">Advance Payment <strong id="advanceView">৳0</strong></div>
-<div class="total">Remaining Due <strong id="due">৳0</strong></div>
-</div>
-<button onclick="saveOrder()">Save Order</button>
-<button class="secondary" onclick="previewMemo()">Preview Memo</button>
-<div id="status"></div>
-</section>
+    <div class="card">
+      <h2>Sales Overview</h2>
+      <div class="summary-grid">
+        <div class="metric"><small>Total Orders</small><strong id="mOrders">0</strong></div>
+        <div class="metric"><small>Delivered Orders</small><strong id="mDelivered">0</strong></div>
+        <div class="metric"><small>Total Revenue</small><strong id="mRevenue">৳0</strong></div>
+        <div class="metric"><small>Outstanding Due</small><strong id="mDue">৳0</strong></div>
+      </div>
+      <div class="grid2" style="margin-top:15px">
+        <div><label>Report Period</label><select id="reportPeriod" onchange="renderReports()"><option value="month">Monthly Sales Report</option><option value="year">Yearly Sales Report</option></select></div>
+        <div><label>Select Month</label><input id="reportMonth" type="month" onchange="renderReports()"></div>
+      </div>
+      <div id="reportSummary" class="notice">Select a report period to view sales.</div>
+      <div class="table-wrap"><table><thead><tr><th>Period</th><th>Orders</th><th>Delivered</th><th>Revenue (BDT)</th><th>Advance (BDT)</th><th>Due (BDT)</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+    </div>
 
-<section class="card" id="memoCard" style="display:none">
-<div class="memo" id="memo">
-<h2>UK IMPORTS IN HABIGANJ</h2>
-<p>Order Memo</p>
-<div id="memoDetails"></div>
-</div>
-<button onclick="window.print()">Print / Save PDF</button>
-</section>
-
-<section class="card" id="history">
-<h2>Order History</h2>
-<button class="secondary" onclick="loadOrders()">Refresh Orders</button>
-<div id="ordersList"></div>
-</section>
-</div>
+    <div class="card">
+      <h2>Order Management</h2>
+      <div class="toolbar">
+        <input id="orderSearch" placeholder="Search memo, customer or phone" oninput="renderOrders()">
+        <select id="statusFilter" onchange="renderOrders()"><option value="">All Statuses</option><option>Order Received</option><option>Order Confirmed</option><option>Processing</option><option>Ready for Delivery</option><option>Delivered</option><option>Cancelled</option></select>
+      </div>
+      <div id="ordersList" style="margin-top:12px"></div>
+    </div>
+    <section id="memoCard" class="card hidden">
+      <div id="memo" class="memo"></div>
+      <div id="memoActions" class="toolbar" style="margin-top:12px">
+        <button class="btn-pink" onclick="shareMemo()">Share Memo</button>
+        <button class="btn-green" onclick="saveMemoImage()">Save Memo to Phone</button>
+        <button class="btn-light" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn-light" onclick="document.getElementById('memoCard').classList.add('hidden')">Close Memo</button>
+      </div>
+      <div id="memoShareStatus" class="status-msg muted"></div>
+    </section>
+  </section>
 </div>
 
 <script>
-// Add your Supabase project details here
 const SUPABASE_URL = "https://atgddtsmakfcchagpyfk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_KDySDL5oZAsi3JDYpYKevw_mSDaX61w";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let ordersCache = [];
+let activeMemo = null;
 
-const db = supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-let currentOrder = null;
+const money = n => "৳" + Number(n || 0).toLocaleString("en-BD", {maximumFractionDigits:2});
+const safe = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const statusOptions = ["Order Received","Order Confirmed","Processing","Ready for Delivery","Delivered","Cancelled"];
 
-function money(n){
- return "৳"+Number(n||0).toLocaleString("en-BD");
+const STAFF_CODE_SHA256 = "2442a7b6672aca8c9f906164f9cbe63ea414aeb1586c685b6ae8ffa68da42187";
+async function sha256Hex(value){
+  const bytes = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
-
-async function login(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- const msg=document.getElementById("loginStatus");
- if(!email||!password){msg.textContent="Enter email and password";return;}
- const {error}=await db.auth.signInWithPassword({email,password});
- if(error){msg.textContent=error.message;return;}
- showApp();
+async function unlockStaff(){
+  const field=document.getElementById("staffAccessCode");
+  const status=document.getElementById("staffAccessStatus");
+  const entered=field.value.trim();
+  if(!entered){status.className="status-msg error";status.textContent="Please enter the team access code.";return;}
+  const digest=await sha256Hex(entered);
+  if(digest!==STAFF_CODE_SHA256){status.className="status-msg error";status.textContent="Incorrect access code.";return;}
+  sessionStorage.setItem("uki_staff_access","yes");
+  document.getElementById("staffAccessPanel").classList.add("hidden");
+  document.getElementById("staffPanel").classList.remove("hidden");
+  status.textContent="";
 }
-
-async function logout(){
- await db.auth.signOut();
- document.getElementById("app").style.display="none";
- document.getElementById("login").style.display="block";
+function lockStaff(){
+  sessionStorage.removeItem("uki_staff_access");
+  document.getElementById("staffPanel").classList.add("hidden");
+  document.getElementById("staffAccessPanel").classList.remove("hidden");
+  document.getElementById("staffAccessCode").value="";
 }
-
-function showApp(){
- document.getElementById("login").style.display="none";
- document.getElementById("app").style.display="block";
- if(!document.querySelector(".product-row"))addProduct();
- loadOrders();
+function showPanel(which){
+  const staffOpen = sessionStorage.getItem("uki_staff_access")==="yes";
+  document.getElementById("staffAccessPanel").classList.toggle("hidden",which!=="staffAccess" || staffOpen);
+  document.getElementById("staffPanel").classList.toggle("hidden",which!=="staffAccess" || !staffOpen);
+  document.getElementById("loginPanel").classList.toggle("hidden",which!=="login");
+  document.getElementById("adminPanel").classList.add("hidden");
+  document.getElementById("staffTab").classList.toggle("btn-pink",which==="staffAccess");
+  document.getElementById("adminTab").classList.toggle("btn-pink",which==="login");
 }
-
-db.auth.getSession().then(({data})=>{
- if(data.session)showApp();
-});
-
-function addProduct(){
- const div=document.createElement("div");
- div.className="row product-row";
- div.innerHTML=`
- <input class="product" placeholder="Product name">
- <input class="qty" type="number" min="1" value="1" oninput="calculate()">
- <input class="price" type="number" min="0" value="0" oninput="calculate()">
- <button class="danger" onclick="this.parentElement.remove();calculate()">Remove</button>`;
- document.getElementById("products").appendChild(div);
- calculate();
+function addProduct(item={}){
+  const div=document.createElement("div"); div.className="product-row";
+  div.innerHTML=`
+    <div class="pname"><label>Product Name</label><input class="product" placeholder="Product name" value="${safe(item.name||"")}"></div>
+    <div><label>Weight (g)</label><input class="weight" type="number" min="0" step="0.01" value="${Number(item.weight||0)}" oninput="calculate()"></div>
+    <div><label>Quantity</label><input class="qty" type="number" min="1" step="1" value="${Number(item.quantity||1)}" oninput="calculate()"></div>
+    <div><label>Unit Price (BDT)</label><input class="price" type="number" min="0" step="0.01" value="${Number(item.price||0)}" oninput="calculate()"></div>
+    <div><label>Line Total</label><input class="lineTotal" value="৳0" readonly></div>
+    <button class="remove" type="button" onclick="this.parentElement.remove();calculate()">Remove</button>`;
+  document.getElementById("products").appendChild(div); calculate();
 }
-
 function getItems(){
- return [...document.querySelectorAll(".product-row")].map(row=>({
- name:row.querySelector(".product").value.trim(),
- quantity:Number(row.querySelector(".qty").value),
- price:Number(row.querySelector(".price").value)
- })).filter(x=>x.name&&x.quantity>0&&x.price>=0);
+  return [...document.querySelectorAll(".product-row")].map(row=>({
+    name:row.querySelector(".product").value.trim(),
+    weight:Number(row.querySelector(".weight").value)||0,
+    quantity:Math.max(0,Math.floor(Number(row.querySelector(".qty").value)||0)),
+    price:Math.max(0,Number(row.querySelector(".price").value)||0)
+  })).filter(x=>x.name && x.quantity>0);
 }
-
 function calculate(){
- const items=getItems();
- const sub=items.reduce((s,x)=>s+x.quantity*x.price,0);
- const delivery=Number(document.getElementById("delivery").value)||0;
- const advance=Number(document.getElementById("advance").value)||0;
- const grand=sub+delivery;
- document.getElementById("subtotal").textContent=money(sub);
- document.getElementById("deliveryView").textContent=money(delivery);
- document.getElementById("grand").textContent=money(grand);
- document.getElementById("advanceView").textContent=money(advance);
- document.getElementById("due").textContent=money(grand-advance);
- return {items,sub,delivery,advance,grand};
+  const items=getItems();
+  let sub=0,totalWeight=0;
+  document.querySelectorAll(".product-row").forEach(row=>{
+    const q=Math.max(0,Number(row.querySelector(".qty").value)||0);
+    const p=Math.max(0,Number(row.querySelector(".price").value)||0);
+    const w=Math.max(0,Number(row.querySelector(".weight").value)||0);
+    row.querySelector(".lineTotal").value=money(q*p);
+    sub+=q*p; totalWeight+=q*w;
+  });
+  const delivery=Math.max(0,Number(document.getElementById("delivery").value)||0);
+  const advance=Math.max(0,Number(document.getElementById("advance").value)||0);
+  const grand=sub+delivery;
+  document.getElementById("subtotal").textContent=money(sub);
+  document.getElementById("totalWeight").textContent=totalWeight.toLocaleString("en-BD")+" g";
+  document.getElementById("deliveryView").textContent=money(delivery);
+  document.getElementById("grand").textContent=money(grand);
+  document.getElementById("advanceView").textContent=money(advance);
+  document.getElementById("due").textContent=money(grand-advance);
+  return {items,sub,totalWeight,delivery,advance,grand,due:grand-advance};
 }
-
 async function saveOrder(){
- const status=document.getElementById("status");
- const name=document.getElementById("customerName").value.trim();
- const phone=document.getElementById("phone").value.trim();
- const address=document.getElementById("address").value.trim();
- const totals=calculate();
-
- if(!name||!phone||!totals.items.length){
-  status.textContent="Please enter customer details and at least one product.";
-  return;
- }
- if(totals.advance>totals.grand){
-  status.textContent="Advance cannot be greater than grand total.";
-  return;
- }
-
- status.textContent="Saving order...";
- const customerResult=await db.from("customers").insert({
-  name,phone,address
- }).select().single();
-
- if(customerResult.error){status.textContent=customerResult.error.message;return;}
-
- const memoNumber="UKI-"+Date.now();
- const orderResult=await db.from("orders").insert({
-  memo_number:memoNumber,
-  customer_id:customerResult.data.id,
-  customer_name:name,
-  customer_phone:phone,
-  customer_address:address,
-  subtotal:totals.sub,
-  delivery_charge:totals.delivery,
-  grand_total:totals.grand,
-  advance_payment:totals.advance,
-  due_amount:totals.grand-totals.advance
- }).select().single();
-
- if(orderResult.error){status.textContent=orderResult.error.message;return;}
-
- const itemRows=totals.items.map(x=>({
-  order_id:orderResult.data.id,
-  product_name:x.name,
-  quantity:x.quantity,
-  unit_price:x.price,
-  total_price:x.quantity*x.price
- }));
-
- const itemResult=await db.from("order_items").insert(itemRows);
- if(itemResult.error){status.textContent="Order created, but product saving failed: "+itemResult.error.message;return;}
-
- currentOrder={memoNumber,name,phone,address,items:totals.items,...totals};
- status.textContent="Order saved successfully!";
- previewMemo();
- loadOrders();
+  const msg=document.getElementById("staffStatus"), btn=document.getElementById("saveBtn");
+  const name=document.getElementById("customerName").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const address=document.getElementById("address").value.trim();
+  const t=calculate();
+  if(!name||!phone||!t.items.length){msg.className="status-msg error";msg.textContent="Please enter customer name, phone number and at least one valid product.";return;}
+  if(t.advance>t.grand){msg.className="status-msg error";msg.textContent="Advance payment cannot be greater than the grand total.";return;}
+  btn.disabled=true; msg.className="status-msg"; msg.textContent="Saving order...";
+  try{
+    // Generate IDs in the browser so the no-login staff form does not need public SELECT permission.
+    const customerId=crypto.randomUUID();
+    const orderId=crypto.randomUUID();
+    const c=await db.from("customers").insert({id:customerId,name,phone,address});
+    if(c.error) throw c.error;
+    const memoNumber="UKI-"+new Date().toISOString().slice(0,10).replaceAll("-","")+"-"+Math.random().toString(36).slice(2,6).toUpperCase();
+    const o=await db.from("orders").insert({
+      id:orderId,memo_number:memoNumber,customer_id:customerId,customer_name:name,customer_phone:phone,customer_address:address,
+      subtotal:t.sub,delivery_charge:t.delivery,grand_total:t.grand,advance_payment:t.advance,due_amount:t.due,status:"Order Received"
+    });
+    if(o.error) throw o.error;
+    const rows=t.items.map(x=>({order_id:orderId,product_name:x.name,quantity:x.quantity,unit_price:x.price,total_price:x.quantity*x.price,weight_grams:x.weight}));
+    const it=await db.from("order_items").insert(rows);
+    if(it.error) throw it.error;
+    activeMemo={id:o.data.id,memo_number:memoNumber,customer_name:name,customer_phone:phone,customer_address:address,created_at:new Date().toISOString(),status:"Order Received",items:t.items,...t};
+    msg.className="status-msg success"; msg.textContent="Order saved successfully. Memo: "+memoNumber;
+    showMemo(activeMemo);
+    document.getElementById("customerName").value="";document.getElementById("phone").value="";document.getElementById("address").value="";
+    document.getElementById("products").innerHTML="";addProduct();
+    document.getElementById("delivery").value=0;document.getElementById("advance").value=0;calculate();
+  }catch(e){
+    msg.className="status-msg error";
+    msg.textContent="Could not save order: "+(e.message||"Unknown error")+". Please contact the admin.";
+  }finally{btn.disabled=false;}
 }
-
 function previewMemo(){
- const name=document.getElementById("customerName").value;
- const phone=document.getElementById("phone").value;
- const address=document.getElementById("address").value;
- const t=calculate();
- const memoNumber=currentOrder?.memoNumber||"Preview";
- let rows=t.items.map(x=>`<tr><td>${escapeHTML(x.name)}</td><td>${x.quantity}</td><td>${money(x.price)}</td><td>${money(x.quantity*x.price)}</td></tr>`).join("");
- document.getElementById("memoDetails").innerHTML=`
- <p><b>Memo:</b> ${memoNumber}<br><b>Date:</b> ${new Date().toLocaleDateString()}</p>
- <p><b>Customer:</b> ${escapeHTML(name)}<br><b>Phone:</b> ${escapeHTML(phone)}<br><b>Address:</b> ${escapeHTML(address)}</p>
- <table width="100%" border="1" cellspacing="0" cellpadding="7">
- <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>${rows}</table>
- <p>Subtotal: ${money(t.sub)}<br>Delivery: ${money(t.delivery)}<br>
- <b>Grand Total: ${money(t.grand)}</b><br>
- Advance: ${money(t.advance)}<br><b>Due: ${money(t.grand-t.advance)}</b></p>
- <p>Thank you for shopping with us!</p>`;
- document.getElementById("memoCard").style.display="block";
+  const t=calculate();
+  activeMemo={memo_number:"PREVIEW",customer_name:document.getElementById("customerName").value,customer_phone:document.getElementById("phone").value,customer_address:document.getElementById("address").value,created_at:new Date().toISOString(),status:"Order Received",items:t.items,...t};
+  showMemo(activeMemo);
 }
-
-function escapeHTML(s){
- return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function showMemo(o){
+  const rows=(o.items||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${safe(x.name||x.product_name)}</td><td>${Number(x.weight||x.weight_grams||0).toLocaleString("en-BD")} g</td><td>${Number(x.quantity||0)}</td><td>${money(x.price??x.unit_price)}</td><td>${money((x.price??x.unit_price)*(x.quantity||0))}</td></tr>`).join("");
+  const totalWeight=(o.items||[]).reduce((s,x)=>s+Number(x.weight||x.weight_grams||0)*Number(x.quantity||0),0);
+  document.getElementById("memo").innerHTML=`
+  <div class="memo-head"><img src="logo.jpg" alt="UK Imports in Habiganj"><h2>ORDER MEMO</h2><div style="color:#657086;font-size:12px;letter-spacing:1px">PREMIUM PRODUCTS • DIRECT FROM UK</div></div>
+  <div class="memo-body">
+    <div class="memo-info">
+      <div><b>Customer Name:</b> ${safe(o.customer_name||"")}</div><div><b>Order Date:</b> ${new Date(o.created_at||Date.now()).toLocaleDateString("en-GB")}</div>
+      <div><b>Phone Number:</b> ${safe(o.customer_phone||"")}</div><div><b>Memo No.:</b> ${safe(o.memo_number||"")}</div>
+      <div style="grid-column:1/-1"><b>Address:</b> ${safe(o.customer_address||"")}</div>
+      <div><b>Status:</b> ${safe(o.status||"Order Received")}</div><div><b>Total Weight:</b> ${totalWeight.toLocaleString("en-BD")} g</div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Product Name</th><th>Weight (g)</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="memo-totals">
+      <div class="total-line">Product Subtotal <b>${money(o.sub??o.subtotal)}</b></div>
+      <div class="total-line">Delivery Charge <b>${money(o.delivery??o.delivery_charge)}</b></div>
+      <div class="total-line" style="font-size:17px;color:var(--pink)"><b>Grand Total</b><b>${money(o.grand??o.grand_total)}</b></div>
+      <div class="total-line">Advance Payment <b>${money(o.advance??o.advance_payment)}</b></div>
+      <div class="total-line">Remaining Due <b>${money(o.due??o.due_amount)}</b></div>
+    </div>
+    <div class="memo-thanks">Thank you for shopping with UK Imports in Habiganj! ♡</div>
+  </div><div class="memo-foot">BRINGING THE BEST FROM UK TO YOU • 🇬🇧</div>`;
+  document.getElementById("memoCard").classList.remove("hidden");
+  document.getElementById("memoCard").scrollIntoView({behavior:"smooth",block:"start"});
 }
-
-async function loadOrders(){
- const list=document.getElementById("ordersList");
- const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(30);
- if(error){list.textContent=error.message;return;}
- list.innerHTML=data.length?data.map(o=>`
- <div class="total">
- <span>${escapeHTML(o.memo_number)}<br><small>${escapeHTML(o.customer_name)}</small></span>
- <strong>${money(o.grand_total)}</strong>
- </div>`).join(""):"No orders yet.";
+async function createMemoImage(){
+  const memo=document.getElementById("memo");
+  if(!memo || !memo.innerText.trim()) throw new Error("Please preview an order memo first.");
+  if(typeof html2canvas==="undefined") throw new Error("Memo image tool did not load. Check your internet connection and try again.");
+  const canvas=await html2canvas(memo,{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
+  return new Promise(resolve=>canvas.toBlob(blob=>resolve(blob),"image/png",1));
 }
+function memoFileName(){
+  const number=(activeMemo?.memo_number||"UK-Imports-Memo").replace(/[^a-zA-Z0-9_-]/g,"_");
+  return number+".png";
+}
+async function saveMemoImage(){
+  const status=document.getElementById("memoShareStatus");
+  status.className="status-msg";status.textContent="Preparing memo image...";
+  try{
+    const blob=await createMemoImage();
+    if(!blob) throw new Error("Could not create the memo image.");
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=memoFileName();document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    status.className="status-msg success";
+    status.textContent="Memo image saved/downloaded. On your phone, open the downloaded image and choose Save to Photos/Gallery if needed.";
+  }catch(e){status.className="status-msg error";status.textContent=e.message||"Could not save memo image.";}
+}
+async function shareMemo(){
+  const status=document.getElementById("memoShareStatus");
+  status.className="status-msg";status.textContent="Preparing memo to share...";
+  try{
+    const blob=await createMemoImage();
+    if(!blob) throw new Error("Could not create the memo image.");
+    const file=new File([blob],memoFileName(),{type:"image/png"});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({title:"UK Imports in Habiganj - Order Memo",text:"Order memo from UK Imports in Habiganj",files:[file]});
+      status.className="status-msg success";status.textContent="Share menu opened.";
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download=memoFileName();document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      status.className="status-msg";
+      status.textContent="This browser does not support direct file sharing. The memo image was downloaded; share it from your phone's Gallery/Photos or Downloads.";
+    }
+  }catch(e){
+    if(e.name==="AbortError"){status.className="status-msg";status.textContent="Sharing cancelled.";}
+    else{status.className="status-msg error";status.textContent=e.message||"Could not share memo.";}
+  }
+}
+async function login(){
+  const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value;
+  const msg=document.getElementById("loginStatus");msg.className="status-msg";msg.textContent="Signing in...";
+  const {error}=await db.auth.signInWithPassword({email,password});
+  if(error){msg.className="status-msg error";msg.textContent=error.message;return;}
+  await showAdmin();
+}
+async function logout(){await db.auth.signOut();ordersCache=[];document.getElementById("adminPanel").classList.add("hidden");showPanel("staffAccess");}
+async function showAdmin(){
+  document.getElementById("staffPanel").classList.add("hidden");document.getElementById("loginPanel").classList.add("hidden");document.getElementById("adminPanel").classList.remove("hidden");
+  await loadDashboard();
+}
+async function loadDashboard(){
+  const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(1000);
+  if(error){document.getElementById("ordersList").textContent="Could not load orders: "+error.message;return;}
+  ordersCache=data||[];renderMetrics();renderReports();renderOrders();
+}
+function renderMetrics(){
+  const delivered=ordersCache.filter(o=>o.status==="Delivered");
+  const notCancelled=ordersCache.filter(o=>o.status!=="Cancelled");
+  document.getElementById("mOrders").textContent=ordersCache.length;
+  document.getElementById("mDelivered").textContent=delivered.length;
+  document.getElementById("mRevenue").textContent=money(delivered.reduce((s,o)=>s+Number(o.grand_total||0),0));
+  document.getElementById("mDue").textContent=money(notCancelled.reduce((s,o)=>s+Number(o.due_amount||0),0));
+}
+function renderReports(){
+  const period=document.getElementById("reportPeriod").value;
+  const month=document.getElementById("reportMonth").value||new Date().toISOString().slice(0,7);
+  const year=month.slice(0,4);
+  const groups={};
+  ordersCache.forEach(o=>{
+    const d=new Date(o.created_at||Date.now());const key=period==="month"?d.toISOString().slice(0,7):String(d.getFullYear());
+    if(period==="month"&&key!==month)return;
+    if(period==="year"&&key!==year)return;
+    if(!groups[key])groups[key]={orders:0,delivered:0,revenue:0,advance:0,due:0};
+    const g=groups[key];g.orders++;
+    if(o.status==="Delivered"){g.delivered++;g.revenue+=Number(o.grand_total||0);}
+    if(o.status!=="Cancelled"){g.advance+=Number(o.advance_payment||0);g.due+=Number(o.due_amount||0);}
+  });
+  const rows=Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0]));
+  document.getElementById("reportSummary").textContent=period==="month"?"Monthly Sales Report — "+month:"Yearly Sales Report — "+year;
+  document.getElementById("reportRows").innerHTML=rows.length?rows.map(([k,g])=>`<tr><td>${safe(k)}</td><td>${g.orders}</td><td>${g.delivered}</td><td>${money(g.revenue)}</td><td>${money(g.advance)}</td><td>${money(g.due)}</td></tr>`).join(""):'<tr><td colspan="6">No orders found for this period.</td></tr>';
+}
+function renderOrders(){
+  const q=(document.getElementById("orderSearch").value||"").toLowerCase(),f=document.getElementById("statusFilter").value;
+  const data=ordersCache.filter(o=>(!f||o.status===f)&&[o.memo_number,o.customer_name,o.customer_phone].some(v=>String(v||"").toLowerCase().includes(q)));
+  document.getElementById("ordersList").innerHTML=data.length?data.map(o=>`
+    <div class="order-row">
+      <div><b>${safe(o.memo_number)}</b><br><span class="muted">${new Date(o.created_at).toLocaleDateString("en-GB")}</span></div>
+      <div>${safe(o.customer_name)}<br><span class="muted">${safe(o.customer_phone)}</span></div>
+      <div><b>${money(o.grand_total)}</b><br><span class="muted">Due ${money(o.due_amount)}</span></div>
+      <div><span class="pill">${safe(o.status||"Order Received")}</span></div>
+      <div class="toolbar"><button class="btn-light" onclick="viewOrder('${o.id}')">View</button><select aria-label="Update order status" onchange="updateStatus('${o.id}',this.value)">${statusOptions.map(s=>`<option ${s===(o.status||"Order Received")?"selected":""}>${s}</option>`).join("")}</select></div>
+    </div>`).join(""):'<p class="muted">No orders found.</p>';
+}
+async function viewOrder(id){
+  const o=ordersCache.find(x=>x.id===id);if(!o)return;
+  const {data,error}=await db.from("order_items").select("*").eq("order_id",id);
+  if(error){alert("Could not load order items: "+error.message);return;}
+  showMemo({...o,items:data||[]});
+}
+async function updateStatus(id,status){
+  const {error}=await db.from("orders").update({status,updated_at:new Date().toISOString()}).eq("id",id);
+  if(error){alert("Status update failed: "+error.message);return;}
+  await loadDashboard();
+}
+document.getElementById("reportMonth").value=new Date().toISOString().slice(0,7);
+addProduct();
+showPanel("staffAccess");
+db.auth.getSession().then(({data})=>{if(data.session)showAdmin();});
+db.auth.onAuthStateChange((_event,session)=>{if(!session){document.getElementById("adminPanel").classList.add("hidden");}});
 </script>
 </body>
 </html>
